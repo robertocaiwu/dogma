@@ -51,6 +51,7 @@ import pdb
 
 DATA_DIR = "../data/sensor_grids/"
 OUTPUT_DIR = "../data/dogma/"
+MEAS_DIR = "../data/meas_grids/"
 
 if not os.path.exists(OUTPUT_DIR):
 	os.makedirs(OUTPUT_DIR)
@@ -82,7 +83,7 @@ def create_DST_grids(grids, meas_mass=0.95):
 
         # car
         indices = np.where(grid == 3)
-        occ_array[indices] = 0.
+        occ_array[indices] = 1.
         free_array[indices] = 0.
 
         data.append(np.stack((free_array, occ_array)))
@@ -98,11 +99,10 @@ import math
 def create_grids():
 
     data = []
-    base_path = 'C:\\Development\\SelfDrivingCar\\dogma-master\\data\\meas_grids'
 
-    for path in sorted(os.listdir(base_path)):
+    for path in sorted(os.listdir(MEAS_DIR)):
 
-		im = cv2.imread(os.path.join(base_path, path))
+		im = cv2.imread(os.path.join(MEAS_DIR, path))
 	
 		occ = im[:, :, 0]
 		free = im[:, :, 1]
