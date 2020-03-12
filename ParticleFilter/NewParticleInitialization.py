@@ -29,6 +29,9 @@ def NewParticleInitialization(Vb, grid_cell_array, meas_cell_array, birth_partic
         # some cells may not get any
         start_idx = calc_start_idx(particle_orders_array_accum, j)
         end_idx = calc_end_idx(particle_orders_array_accum, j)
+        
+        #print("Start idx: %d, End idx: %d" % (start_idx, end_idx))
+        
         num_new_particles = end_idx - start_idx + 1 if start_idx <= end_idx else 0
         p_A = meas_cell_array.get_cell_attr(j, "p_A")
         nu_A = calc_num_assoc(p_A, num_new_particles)
@@ -37,6 +40,8 @@ def NewParticleInitialization(Vb, grid_cell_array, meas_cell_array, birth_partic
         # associated and unassociated weights
         w_A = calc_weight_assoc(nu_A, p_A, grid_cell_array, j)
         w_UA = calc_weight_unassoc(nu_UA, p_A, grid_cell_array, j)
+
+        #print("w_A: %f, w_UA: %f" % (w_A, w_UA))
 
         # position of the middle point of a cell, this will be used in 
         # initializing the position of the associated particle
@@ -84,8 +89,13 @@ def NewParticleInitialization(Vb, grid_cell_array, meas_cell_array, birth_partic
 def normalize_particle_orders(particle_orders_array_accum, Vb):
     # maximum is the last element in accumulative array
     array_max = particle_orders_array_accum[-1]
+    print("normalize_particle_orders: max: %f" % array_max)
+
     if array_max <= 0: raise Exception("Accumulative array is empty or negative.")
     particle_orders_array_accum *=  Vb / (1.0 * array_max)
+
+    print "normalize_particle_orders: new max: ", particle_orders_array_accum[-1]
+
     return
 
 # Calculates first index in birth_particle_array of cell j

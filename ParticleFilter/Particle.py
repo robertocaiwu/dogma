@@ -51,14 +51,13 @@ class Particle(object):
     def __getitem__(self, index):
         return self.state[index]
 
-    def predict(self, transition_matrix, noiseSD = 0.1):
-        # process noise should be constant for each time step: VARIANCE WILL PROB NEED TO DIFFER FOR POSITION, VELOCITY, ACCELERATION
-        zeta = np.zeros(self.state_size)
-        zeta[0:2] = np.random.normal(0, self.process_pos, 2)
-        if self.state_size == 4:
-            zeta[2:] = np.random.normal(0, self.process_vel, 2) # length 4, while state is position, velocity
+    def predict(self, transition_matrix, zeta, noiseSD = 0.1):
+        process_noise = np.zeros(self.state_size)
+        process_noise[0:2] = np.random.normal(0, self.process_pos, 2)
+        process_noise[2:] = np.random.normal(0, self.process_vel, 2)
+
         # Equations 14
-        self.state = np.dot(transition_matrix, self.state) + zeta
+        self.state = np.dot(transition_matrix, self.state) + process_noise
         return
     
     def persist_update_weight(self):
@@ -155,6 +154,13 @@ class ParticleArray(object):
         self.particles.sort(key=lambda x: x.index)
         return
 
+    def get_weights(self):
+        weights = np.zeros(self.get_length())
+        for i in range(self.get_length()):
+            weights[i] = self.particles[i].weight
+
+        return weights
+
     # return cell index
     def get_cell_idx(self, particle_index):
         return self.particles[particle_index].index
@@ -205,8 +211,9 @@ class ParticleArray(object):
 
 
     # calls predict on a particular particle
-    def predict(self, particle_index):
-        self.particles[particle_index].predict(transition_matrix = self.transition_matrix)
+    def predict(self, particle_index, zeta):
+
+        self.particles[particle_index].predict(transition_matrix = self.transition_matrix, zeta=zeta)
 
     def reinit(self, particle_index):
 

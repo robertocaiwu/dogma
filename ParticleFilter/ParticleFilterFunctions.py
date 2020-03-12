@@ -29,6 +29,7 @@ from NewParticleInitialization import *
 from ParticlePrediction import *
 from ParticleAssignment import *
 from OccupancyPredictionUpdate import *
+from MassUpdate import *
 from PersistentParticleUpdate import *
 from StatisticMoments import *
 from Resample import *
@@ -81,9 +82,35 @@ def create_DST_grids(grids, meas_mass=0.95):
 
         # car
         indices = np.where(grid == 3)
-        occ_array[indices] = 1.
+        occ_array[indices] = 0.
+        free_array[indices] = 0.
 
         data.append(np.stack((free_array, occ_array)))
+
+    data = np.array(data) 
+        
+    return data
+
+import cv2
+import colorsys
+import math
+
+def create_grids():
+
+    data = []
+    base_path = 'C:\\Development\\SelfDrivingCar\\dogma-master\\data\\meas_grids'
+
+    for path in sorted(os.listdir(base_path)):
+
+		im = cv2.imread(os.path.join(base_path, path))
+	
+		occ = im[:, :, 0]
+		free = im[:, :, 1]
+
+		free = np.divide(free, 255.0)
+		occ = np.divide(occ, 255.0)
+
+		data.append(np.stack((free, occ)))
 
     data = np.array(data) 
         
@@ -101,13 +128,13 @@ def main():
 		grids = np.array(grids)
 
 		end = time.time()
-		print "Loading simulation datatook", end - start, len(grids), grids[0].shape
+		#print "Loading simulation datatook", end - start, len(grids), grids[0].shape
 
 	# crop grids to the desired shape
 	shape = (128,128)
 	grids = np.array(grids)
 	grids = crop_center(grids, shape[0])
-	print grids.shape
+	#print grids.shape
 
 	do_plot = True # Toggle me for DOGMA plots!
 
@@ -147,18 +174,19 @@ def main():
 	start = time.time()
 	grid_cell_array = GridCellArray(shape, p_A)
 	end =  time.time()
-	print "grid_cell_array initialization took", end - start
+	#print "grid_cell_array initialization took", end - start
 
 	# initialize a particle array
 	start = time.time()
 	particle_array = ParticleArray(V, grid_cell_array.get_shape(), state_size, T, p_S, scale_vel, scale_acc, process_pos, process_vel, process_acc)
 	end =  time.time()
-	print "particle_array initialization took", end - start
+	#print "particle_array initialization took", end - start
 
 	# data: [N x 2 x W x D]
 	# second dimension is masses {0: m_free, 1: m_occ}
 	# in original grid: 0: unknown, 1: occupied, 2: free (raw data)
-	data = create_DST_grids(grids)
+#	data = create_DST_grids(grids)
+	data = create_grids()
 
 	# number of measurements in the run
 	N = data.shape[0]
@@ -191,6 +219,7 @@ def main():
 
 		# algorithm 3: OccupancyPredictionUpdate (stored in grid_cell_array)
 		OccupancyPredictionUpdate(meas_cell_array, grid_cell_array, particle_array, p_B, alpha, check_values = verbose)
+		#MassUpdate(meas_cell_array, grid_cell_array, p_B, alpha, check_values = verbose)
 
 		# algorithm 4: PersistentParticleUpdate (stored in particle_array)
 		PersistentParticleUpdate(particle_array, grid_cell_array, meas_cell_array, check_values = verbose)
@@ -206,18 +235,20 @@ def main():
 		# algorithm 6: StatisticMoments (stored in grid_cell_array)
 		StatisticMoments(particle_array, grid_cell_array)
 
-		if (i + 1) > index_stopped:
+	#	if (i + 1) > index_stopped:
 
-			newDOGMA, new_var_x_vel, new_var_y_vel, new_covar_xy_vel = get_dogma(grid_cell_array, grids, state_size, grids[i,:,:], shape)
+	
+	#		newDOGMA, new_var_x_vel, new_var_y_vel, new_covar_xy_vel = get_dogma(grid_cell_array, grids, state_size, grids[i,:,:], shape)
 			
-		var_x_vel.append(new_var_x_vel)
-		var_y_vel.append(new_var_y_vel)
-		covar_xy_vel.append(new_covar_xy_vel)
+#		var_x_vel.append(new_var_x_vel)
+#		var_y_vel.append(new_var_y_vel)
+#		covar_xy_vel.append(new_covar_xy_vel)
 
 		# save the DOGMA at this timestep: before we had occupancy, free, but this is actually not the real occupancy plot
 		# so we will just use the measurement grid for now
-		if (i+1) > index_stopped:
-			DOGMA.append(newDOGMA)
+#		if (i+1) > index_stopped:
+#			DOGMA.append(newDOGMA)
+#			print("really?")
 
 		# algorithm 7: Resample
 		# skips particle initialization for particle_array_next because all particles will be copied in
@@ -225,25 +256,91 @@ def main():
 				                        scale_vel, scale_acc, process_pos, process_vel, process_acc, empty_array = True)
 		Resample(particle_array, birth_particle_array, particle_array_next, check_values = verbose)
 
+		
 		# switch to new particle array
 		particle_array = particle_array_next
 		particle_array_next = None
 
 		end = time.time()
-		print "Time per iteration: ", end - start
+		print "### Iteration took: ", end - start
 
 		# Plotting: The environment is stored in grids[i] (matrix of  values (0,1,2))
 		#           The DOGMA is stored in DOGMA[i]
-		if (do_plot):
-			head_grid = dogma2head_grid(DOGMA[i], var_x_vel[i], var_y_vel[i], covar_xy_vel[i], mS, epsilon, epsilon_occ)
-			occ_grid = grids[i,:,:]
-			title = "DOGMa Iteration %d" % i
-			colorwheel_plot(head_grid, occ_grid=occ_grid, m_occ_grid = DOGMA[i][0,:,:], title=os.path.join(OUTPUT_DIR, title), show=True, save=True)
+#		if (do_plot):
+#			head_grid = dogma2head_grid(DOGMA[i], var_x_vel[i], var_y_vel[i], covar_xy_vel[i], mS, epsilon, epsilon_occ)
+#			occ_grid = grids[i,:,:]
+#			title = "DOGMa Iteration %d" % i
+#			colorwheel_plot(head_grid, occ_grid=occ_grid, m_occ_grid = DOGMA[i][0,:,:], title=os.path.join(OUTPUT_DIR, title), show=True, save=True)
 
-		print "Iteration ", i, " complete"
+		#print "Iteration ", i, " complete"
+		print "### Saving result"
+		print "#####################"
 
-		hkl.dump([DOGMA, var_x_vel, var_y_vel, covar_xy_vel], os.path.join(OUTPUT_DIR, 'DOGMA.hkl'), mode='w')
-		print "DOGMA written to hickle file."
+		gm_img = np.zeros((shape[1], shape[0], 3), np.uint8)
+
+		for y in range(shape[1]):
+			for x in range(shape[0]):
+				ind = y * shape[0] + x
+				c = grid_cell_array.cells[ind]
+				occ = c.m_occ + 0.5 * (1.0 - c.m_occ - c.m_free)
+				temp = int(occ * 255)
+
+				covar = np.array([[c.var_x_vel, c.covar_xy_vel], [c.covar_xy_vel, c.var_y_vel]])
+				if abs(np.linalg.det(covar)) < 10**(-6):
+					mdist = 0.
+				else:
+					mdist = np.array([c.mean_x_vel, c.mean_y_vel]).dot(np.linalg.inv(covar)).dot(np.array([c.mean_x_vel, c.mean_y_vel]).T)
+
+				if occ >= 0.6 and mdist >= 4:
+					#print("bims")
+					#print("hello >= 0.6")
+					angle = math.atan2(c.mean_y_vel, c.mean_x_vel)
+					angle = math.degrees(angle)
+
+					r, g, b = colorsys.hsv_to_rgb(angle / 360.0, 1.0, 1.0)
+
+					gm_img[int(y), int(x), 0] = int(b * 255)
+					gm_img[int(y), int(x), 1] = int(g * 255)
+					gm_img[int(y), int(x), 2] = int(r * 255)
+				else:
+					gm_img[int(y), int(x), 0] = 255 - temp
+					gm_img[int(y), int(x), 1] = 255 - temp
+					gm_img[int(y), int(x), 2] = 255 - temp
+
+		cv2.imwrite(os.path.join(OUTPUT_DIR, 'dogm_gm%d.png' % i), gm_img)
+
+
+		parts_img = np.zeros((shape[1], shape[0], 3), np.uint8)
+
+		for part in particle_array:
+			x = part[0]
+			y = part[1]
+
+			if (x >= 0 and x < shape[0]) and (y >= 0 and y < shape[1]):
+				parts_img[int(x), int(y), 0] = 0
+				parts_img[int(x), int(y), 1] = 0
+				parts_img[int(x), int(y), 2] = 255
+
+		cv2.imwrite(os.path.join(OUTPUT_DIR, 'dogm_particles%d.png' % i), parts_img)
+
+		meas_img = np.zeros((shape[1], shape[0], 3), np.uint8)
+
+		for y in range(shape[1]):
+			for x in range(shape[0]):
+				ind = y * shape[0] + x
+				c = meas_cell_array.cells[ind]
+				occ = c.m_occ + 0.5 * (1.0 - c.m_occ - c.m_free)
+				temp = int(occ * 255)
+
+				meas_img[int(y), int(x), 0] = int(c.m_occ * 255)
+				meas_img[int(y), int(x), 1] = int(c.m_free * 255)
+				meas_img[int(y), int(x), 2] = 0
+
+		cv2.imwrite(os.path.join(OUTPUT_DIR, 'meas_grid%d.png' % i), meas_img)
+
+
+#		hkl.dump([DOGMA, var_x_vel, var_y_vel, covar_xy_vel], os.path.join(OUTPUT_DIR, 'DOGMA.hkl'), mode='w')
+#		print "DOGMA written to hickle file."
 		
 	return
 

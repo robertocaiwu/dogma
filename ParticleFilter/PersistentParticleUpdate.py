@@ -50,8 +50,13 @@ def PersistentParticleUpdate(particle_array, grid_cell_array, meas_cell_array, c
             mu_UA = calc_norm_unassoc(rho_p, m_occ_accum_orig)
             grid_cell_array.set_cell_nc(j, mu_A, mu_UA)
 
+            #print("mu_A: %f, mu_UA: %f" % (mu_A, mu_UA))
+
+            #print("occ_acum: %f, rho_p: %f, mu_A: %f, mu_UA: %f\n" % (m_occ_accum, rho_p, mu_A, mu_UA))
+
         else:
             # cells without particles predicted into
+            #print("Persistent update None")
             next
 
     particle_array.normalize_weight(weight_array, grid_cell_array, meas_cell_array)

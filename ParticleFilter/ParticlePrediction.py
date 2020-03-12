@@ -9,6 +9,7 @@ Propagates the particles according to transition model (linear).
 from Particle import *
 from Grid import *
 import pdb
+import numpy as np
 
 # INPUT:
 # particle_array: class ParticleList object
@@ -17,9 +18,13 @@ def ParticlePrediction(particle_array, grid_cell_array, res):
     # get grid dimensions from grid_cell_array to map particles to the right index
     X, Y = grid_cell_array.get_shape()
 
+    zeta = np.zeros(4)
+    zeta[0:2] = np.random.normal(0, particle_array.process_pos, 2)
+    zeta[2:] = np.random.normal(0, particle_array.process_vel, 2)
+
     for i in range(particle_array.get_length()):
         # Applies equation 14
-        particle_array.predict(i)
+        particle_array.predict(i, zeta)
 
         # Replacing particle that goes off grid with the same particle in a uniformly random location in the grid
         particle_state = particle_array.get_state(i)

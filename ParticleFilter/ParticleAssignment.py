@@ -39,6 +39,13 @@ def ParticleAssignment(particle_array, grid_cell_array):
         if i == particle_array.get_length() - 1:
             grid_cell_array.set_cell_attr(j, "end_index", i)
 
+        start = grid_cell_array.get_cell_attr(j, "start_index")
+        end = grid_cell_array.get_cell_attr(j, "end_index")
+        my_start = -1 if start is None else start
+        my_end = -1 if end is None else end
+
+        #print("Cell: %d Start: %d, End: %d" % (j, my_start, my_end))
+
 		# debugging
         if particle_array.get_weight(i) <= 0:
             raise Exception("WHY ARE PARTICLE WEIGHTS ZERO")

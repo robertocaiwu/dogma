@@ -30,27 +30,43 @@ def Resample(particle_array, birth_particle_array, particle_array_next, check_va
     else:
         V = particle_array.get_length()
         Vb = birth_particle_array.get_length()
+
+        #rand_array = np.zeros(V)
+        #for i in range(V):
+        #    rand_array[i] = np.random.uniform(0, V + Vb)
+
         rand_array = np.random.randint(V + Vb, size = V)
 
         # sort the array
         rand_array = np.sort(rand_array)
 
+        #print("Rand: %f" % rand_array[100])
+
         # sort the born particles array according to grid cell index
         birth_particle_array.sort_particles()
+
+        my_max = np.max(particle_array.get_weights())
+        print("Persistent max: %f" % my_max)
+
+        new_max = np.max(birth_particle_array.get_weights())
+        print("New born max: %f" % new_max)
 
         # these weights should be normalized at the grid cell level (for each grid cell the weights should sum to rho_b or
         # rho_p respectively)
         persistent_accum = particle_array.accumulate_weight()
         offset = persistent_accum[-1]
+        #print("Offset: %f" % offset)
         birth_accum = birth_particle_array.accumulate_weight() + offset
         joint_weight_array_accum =  np.concatenate((persistent_accum, birth_accum))
 
     # calculates resampled particle indices
     idx_array_resampled = calc_resampled_indeces(joint_weight_array_accum, rand_array, len(joint_weight_array_accum))
 
+    print("joint_max: %f" % joint_weight_array_accum[-1])
+
     # the weight for every particle must be the same and equal to sum of rho_b and rho_p for all particles divided by
     # number of particles
-    new_particle_weight = joint_weight_array_accum[-1]/1./V
+    new_particle_weight = joint_weight_array_accum[-1] / float(V)
 
     for i in range(V):
         sample_index = idx_array_resampled[i]
@@ -99,10 +115,14 @@ def calc_resampled_indeces(joint_weight_array_accum, rand_array, joint_particle_
     scale_factor = (joint_particle_num - 1.) / accum_max
     weight_accum_scaled = joint_weight_array_accum * scale_factor
 
+    print("Norm: %f, Rand: %f" % (weight_accum_scaled[-1], rand_array[-1]))
+    #print("N: %d, R: %d" % (joint_particle_num, len(rand_array)))
+
     # This should hold given the above calculation, but might not 
     # due to rounding error. We correct in case that happens.
     if weight_accum_scaled[-1] != rand_array[-1]: weight_accum_scaled[-1] = rand_array[-1]  
     
+    """
     # return the index of the range that incorporates the random selection
     random_particle_index = 0
     resampled_indeces = []
@@ -114,3 +134,5 @@ def calc_resampled_indeces(joint_weight_array_accum, rand_array, joint_particle_
                 return resampled_indeces
 
     raise Exception("Should not get to here.")
+    """
+    return np.searchsorted(weight_accum_scaled, rand_array)

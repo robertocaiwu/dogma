@@ -75,9 +75,9 @@ def colorwheel_plot(head_grid, occ_grid=None, m_occ_grid=None,
     # Build the mask of occupied masses
     # NOTE: occupied: 1, not occupied = 0
     #if m_occ_grid is not None:
-        #occ_cmap = get_occ_cmap()
+     #   occ_cmap = get_occ_cmap()
         #plt.clim(0, 2)
-        #env_plt = plt.imshow(m_occ_grid, cmap=occ_cmap)
+     #   env_plt = plt.imshow(m_occ_grid, cmap=occ_cmap)
 
     # Create the original velocity plot
     # grid_plt = plt.imshow(grid, origin='lower')

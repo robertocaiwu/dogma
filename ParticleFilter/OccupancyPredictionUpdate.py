@@ -28,6 +28,7 @@ def OccupancyPredictionUpdate(meas_cell_array, grid_cell_array, particle_array, 
 
             # truncate to pS probability
             if (m_occ_pred > particle_array.p_S):
+                print("Mass exceeds p_S, mass is: %f" % m_occ_pred);
                 m_occ_pred = particle_array.p_S
                 particle_array.normalize_p_S(grid_cell_array.get_cell_attr(j, "start_index"), grid_cell_array.get_cell_attr(j, "end_index")) 
 
@@ -54,6 +55,8 @@ def OccupancyPredictionUpdate(meas_cell_array, grid_cell_array, particle_array, 
                 assert (m_free_up <= 1. and m_free_up >= 0.)
                 assert(m_occ_up + m_free_up <= 1.)
 
+            #print("Occ pred: %f, free pred: %f, Occ up: %f, free up: %f" % (m_occ_pred, m_free_pred, m_occ_up, m_free_up))
+
             # compute new-born part of posterior occupancy mass
             rho_b = separate_newborn_part(m_occ_pred, m_occ_up, p_B)
 
@@ -66,6 +69,7 @@ def OccupancyPredictionUpdate(meas_cell_array, grid_cell_array, particle_array, 
         
         else:
             # cells with no particles.
+            #print("Mass update None")
             next
     
     return
