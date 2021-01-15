@@ -15,38 +15,35 @@ The simulation example considers a stationary ego vehicle and 2 vehicles traveli
 The grids have 33 cm resolution.
 
 """
-import matplotlib
-matplotlib.use('Agg')
-
-import numpy as np
-import pdb
+from PlotTools import colorwheel_plot, particle_plot
+import math
+import os
+import sys
+import time
+import hickle as hkl
+import pickle
+from Simulator import *
+from Grid import *
+from Particle import *
+from Resample import *
+from StatisticMoments import *
+from PersistentParticleUpdate import *
+from OccupancyPredictionUpdate import *
+from ParticleAssignment import *
+from ParticlePrediction import *
+from NewParticleInitialization import *
 from scipy.stats import itemfreq
+import pdb
+import numpy as np
+import matplotlib
+# matplotlib.use('Agg')
+
 
 seed = 1987
 np.random.seed(seed)
 
-from NewParticleInitialization import *
-from ParticlePrediction import *
-from ParticleAssignment import *
-from OccupancyPredictionUpdate import *
-from PersistentParticleUpdate import *
-from StatisticMoments import *
-from Resample import *
 
-from Particle import *
-from Grid import *
-
-from Simulator import *
-
-import pickle
-import hickle as hkl
-import time
-import sys
-import os
-import math
 sys.path.insert(0, '..')
-from PlotTools import colorwheel_plot, particle_plot
-import pdb
 
 DATA_DIR = "../data/sensor_grids/"
 OUTPUT_DIR = "../data/dogma/"
@@ -54,23 +51,26 @@ OUTPUT_DIR = "../data/dogma/"
 if not os.path.exists(OUTPUT_DIR):
 	os.makedirs(OUTPUT_DIR)
 
-def crop_center(img,crop):
-    m,x,y = img.shape
+
+def crop_center(img, crop):
+    m, x, y = img.shape
     startx = x//2-(crop//2)
-    starty = y//2-(crop//2)    
-    return img[:,starty:starty+crop,startx:startx+crop]
+    starty = y//2-(crop//2)
+    return img[:, starty:starty+crop, startx:startx+crop]
 
 # Populate the Dempster-Shafer measurement masses.
+
+
 def create_DST_grids(grids, meas_mass=0.95):
-    
+
     data = []
-    
+
     for i in range(grids.shape[0]):
 
-        grid = grids[i,:,:]
+        grid = grids[i, :, :]
         free_array = np.zeros(grid.shape)
         occ_array = np.zeros(grid.shape)
-        
+
         # occupied indices
         indices = np.where(grid == 1)
         occ_array[indices] = meas_mass
@@ -85,42 +85,52 @@ def create_DST_grids(grids, meas_mass=0.95):
 
         data.append(np.stack((free_array, occ_array)))
 
-    data = np.array(data) 
-        
+    data = np.array(data)
+
     return data
 
-def main():
+
+def particle_filter_functions():
 
 	with open(os.path.join(DATA_DIR, 'simulation.pickle'), 'rb') as f:
 		start = time.time()
-		
+
 		# load sensor grid data (list of arrays)
-		[grids, global_x_grid, global_y_grid] = pickle.load(f)
+		simulation_data = pickle.load(f,encoding='bytes')
+		print(simulation_data)
+		[grids, global_x_grid, global_y_grid] = simulation_data
 
 		# convert to numpy array
 		grids = np.array(grids)
 
 		end = time.time()
-		print "Loading simulation datatook", end - start, len(grids), grids[0].shape
+		print("Loading simulation datatook" + str(end - start) +
+		      ", " + str(len(grids)) + ", " + str(grids[0].shape))
 
 	# crop grids to the desired shape
-	shape = (128,128)
+	shape = (128, 128)
 	grids = np.array(grids)
 	grids = crop_center(grids, shape[0])
-	print grids.shape
+	print("grids shape: " + str(grids.shape))
 
-	do_plot = True # Toggle me for DOGMA plots!
+	do_plot = True  # Toggle me for DOGMA plots!
 
 	# PARAMETERS
 	p_B = 0.02                                            # birth probability
-	Vb = 2*10**4                                          # number of new born particles
-	V = 2*10**5                                           # number of consistent particles
+	# number of new born particles
+	Vb = 2*10**4
+	# number of consistent particles
+	V = 2*10**5
 	state_size = 4                                        # number of states: p,v: 4
-	alpha = 0.9                                           # information ageing (discount factor)
+	# information ageing (discount factor)
+	alpha = 0.9
 
-	p_A = 1.0                                             # association probability: only relevant for Doppler measurements
-	T = 0.1                                               # measurement frequency (10 Hz)
-	p_S = 0.99                                            # particle persistence probability
+	# association probability: only relevant for Doppler measurements
+	p_A = 1.0
+	# measurement frequency (10 Hz)
+	T = 0.1
+	# particle persistence probability
+	p_S = 0.99
 	res = 1.                                              # resolution of the grid cells
 
 	# velocity, acceleration variance initialization
@@ -146,14 +156,15 @@ def main():
 	# initialize a grid
 	start = time.time()
 	grid_cell_array = GridCellArray(shape, p_A)
-	end =  time.time()
-	print "grid_cell_array initialization took", end - start
+	end = time.time()
+	print("grid_cell_array initialization took " + str(end - start))
 
 	# initialize a particle array
 	start = time.time()
-	particle_array = ParticleArray(V, grid_cell_array.get_shape(), state_size, T, p_S, scale_vel, scale_acc, process_pos, process_vel, process_acc)
-	end =  time.time()
-	print "particle_array initialization took", end - start
+	particle_array = ParticleArray(V, grid_cell_array.get_shape(
+	), state_size, T, p_S, scale_vel, scale_acc, process_pos, process_vel, process_acc)
+	end = time.time()
+	print("particle_array initialization took " + str(end - start))
 
 	# data: [N x 2 x W x D]
 	# second dimension is masses {0: m_free, 1: m_occ}
@@ -163,7 +174,7 @@ def main():
 	# number of measurements in the run
 	N = data.shape[0]
 
-	# list of 4x128x128 grids with position, velocity information 
+	# list of 4x128x128 grids with position, velocity information
 	DOGMA = []
 	var_x_vel = []
 	var_y_vel = []
@@ -178,10 +189,11 @@ def main():
 		start = time.time()
 
 		# initializes a measurement cell array
-		meas_free = data[i,0,:,:].flatten()
-		meas_occ = data[i,1,:,:].flatten()
+		meas_free = data[i, 0, :, :].flatten()
+		meas_occ = data[i, 1, :, :].flatten()
 
-		meas_cell_array = MeasCellArray(meas_free, meas_occ, grid_cell_array.get_shape(), pseudoG = 1.)
+		meas_cell_array = MeasCellArray(
+		    meas_free, meas_occ, grid_cell_array.get_shape(), pseudoG=1.)
 
 		# algorithm 1: ParticlePrediction (stored in particle_array)
 		ParticlePrediction(particle_array, grid_cell_array, res=res)
@@ -190,26 +202,31 @@ def main():
 		ParticleAssignment(particle_array, grid_cell_array)
 
 		# algorithm 3: OccupancyPredictionUpdate (stored in grid_cell_array)
-		OccupancyPredictionUpdate(meas_cell_array, grid_cell_array, particle_array, p_B, alpha, check_values = verbose)
+		OccupancyPredictionUpdate(meas_cell_array, grid_cell_array,
+		                          particle_array, p_B, alpha, check_values=verbose)
 
 		# algorithm 4: PersistentParticleUpdate (stored in particle_array)
-		PersistentParticleUpdate(particle_array, grid_cell_array, meas_cell_array, check_values = verbose)
+		PersistentParticleUpdate(particle_array, grid_cell_array,
+		                         meas_cell_array, check_values=verbose)
 
 		# algorithm 5: NewParticleInitialization
 		if p_B == 0:
 			empty_array = True
 		else:
 			empty_array = False
-		birth_particle_array = ParticleArray(Vb, grid_cell_array.get_shape(), state_size, T, p_S, scale_vel, scale_acc, process_pos, process_vel, process_acc, birth = True, empty_array = empty_array)
-		NewParticleInitialization(Vb, grid_cell_array, meas_cell_array, birth_particle_array, check_values = verbose)
+		birth_particle_array = ParticleArray(Vb, grid_cell_array.get_shape(
+		), state_size, T, p_S, scale_vel, scale_acc, process_pos, process_vel, process_acc, birth=True, empty_array=empty_array)
+		NewParticleInitialization(
+		    Vb, grid_cell_array, meas_cell_array, birth_particle_array, check_values=verbose)
 
 		# algorithm 6: StatisticMoments (stored in grid_cell_array)
 		StatisticMoments(particle_array, grid_cell_array)
 
 		if (i + 1) > index_stopped:
 
-			newDOGMA, new_var_x_vel, new_var_y_vel, new_covar_xy_vel = get_dogma(grid_cell_array, grids, state_size, grids[i,:,:], shape)
-			
+			newDOGMA, new_var_x_vel, new_var_y_vel, new_covar_xy_vel = get_dogma(
+			    grid_cell_array, grids, state_size, grids[i, :, :], shape)
+
 		var_x_vel.append(new_var_x_vel)
 		var_y_vel.append(new_var_y_vel)
 		covar_xy_vel.append(new_covar_xy_vel)
@@ -221,39 +238,45 @@ def main():
 
 		# algorithm 7: Resample
 		# skips particle initialization for particle_array_next because all particles will be copied in
-		particle_array_next = ParticleArray(V, grid_cell_array.get_shape(), state_size, T, p_S, \
-				                        scale_vel, scale_acc, process_pos, process_vel, process_acc, empty_array = True)
-		Resample(particle_array, birth_particle_array, particle_array_next, check_values = verbose)
+		particle_array_next = ParticleArray(V, grid_cell_array.get_shape(), state_size, T, p_S,
+				                        scale_vel, scale_acc, process_pos, process_vel, process_acc, empty_array=True)
+		Resample(particle_array, birth_particle_array,
+		         particle_array_next, check_values=verbose)
 
 		# switch to new particle array
 		particle_array = particle_array_next
 		particle_array_next = None
 
 		end = time.time()
-		print "Time per iteration: ", end - start
+		print("Time per iteration: " + str(end - start))
 
 		# Plotting: The environment is stored in grids[i] (matrix of  values (0,1,2))
 		#           The DOGMA is stored in DOGMA[i]
 		if (do_plot):
-			head_grid = dogma2head_grid(DOGMA[i], var_x_vel[i], var_y_vel[i], covar_xy_vel[i], mS, epsilon, epsilon_occ)
-			occ_grid = grids[i,:,:]
+			head_grid = dogma2head_grid(
+			    DOGMA[i], var_x_vel[i], var_y_vel[i], covar_xy_vel[i], mS, epsilon, epsilon_occ)
+			occ_grid = grids[i, :, :]
 			title = "DOGMa Iteration %d" % i
-			colorwheel_plot(head_grid, occ_grid=occ_grid, m_occ_grid = DOGMA[i][0,:,:], title=os.path.join(OUTPUT_DIR, title), show=True, save=True)
+			colorwheel_plot(head_grid, occ_grid=occ_grid, m_occ_grid=DOGMA[i][0, :, :], title=os.path.join(
+			    OUTPUT_DIR, title), show=True, save=True)
 
-		print "Iteration ", i, " complete"
+		print("Iteration " + str(i) + " complete")
 
-		hkl.dump([DOGMA, var_x_vel, var_y_vel, covar_xy_vel], os.path.join(OUTPUT_DIR, 'DOGMA.hkl'), mode='w')
-		print "DOGMA written to hickle file."
-		
+		hkl.dump([DOGMA, var_x_vel, var_y_vel, covar_xy_vel],
+		         os.path.join(OUTPUT_DIR, 'DOGMA.hkl'), mode='w')
+		print("DOGMA written to hickle file.")
+
 	return
 
 # Save DOGMa: 4x128x128 (occupied mass, free mass, velocity x, velocity y, original measurement grid)
-# and DOGMa statistics: velocity variances and covariances 
-def get_dogma(grid_cell_array, grids, state_size, meas_grid, shape):
-    
-    ncells = grid_cell_array.get_length()
+# and DOGMa statistics: velocity variances and covariances
 
-    if state_size == 4:
+
+def get_dogma(grid_cell_array, grids, state_size, meas_grid, shape):
+
+	ncells = grid_cell_array.get_length()
+	if (state_size == 4 ):
+	
 		posO = np.zeros([ncells])
 		posF = np.zeros([ncells])
 		velX = np.zeros([ncells])
@@ -282,8 +305,7 @@ def get_dogma(grid_cell_array, grids, state_size, meas_grid, shape):
 		newDOGMA = np.stack((posO,posF,velX,velY,meas_grid))
 
 		return newDOGMA, var_x_vel, var_y_vel, covar_xy_vel
-
-    else:
+	else:
 		raise Exception("Unexpected state size.")
 		return
 
@@ -327,4 +349,4 @@ def dogma2head_grid(dogma, var_x_vel, var_y_vel, covar_xy_vel, mS = 4., epsilon=
 	return head_grid
 
 if __name__ == "__main__":
-    main()
+    particle_filter_functions()

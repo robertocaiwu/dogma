@@ -116,7 +116,7 @@ class CellArray(object):
     # sets attribute of a particular cell
     def set_cell_attr(self, cell_index, attribute, value):
         if (len(self.cells) <= cell_index):        
-            print len(self.cells), cell_index
+            print(str(len(self.cells)) + ": " + str(cell_index))
         setattr(self.cells[cell_index], attribute, value)
         return
 

@@ -40,16 +40,16 @@ def OccupancyPredictionUpdate(meas_cell_array, grid_cell_array, particle_array, 
 
 			# debugging information
             if check_values and ((m_occ_up == 1.) and (m_occ_pred > 0.5)):
-                print "check updates", m_occ_up
-                print "check predictions", m_occ_pred
-                print "check actual predictions", meas_cell_array.get_cell_attr(j, "m_occ")
+                print("check updates" + str(m_occ_up))
+                print("check predictions" + str(m_occ_pred))
+                print("check actual predictions" + str(meas_cell_array.get_cell_attr(j, "m_occ")))
 			
 			# debugging information
             if check_values and (m_occ_up > 1 or m_occ_up < 0):
-                print "start index: ", grid_cell_array.get_cell_attr(j, "start_index"), "end index: ", \
-                grid_cell_array.get_cell_attr(j, "end_index"), "mass_occ: ", m_occ_up, "mass_free: ", \
-                m_free_up, "weight[start]: ", weight_array_accum[grid_cell_array.get_cell_attr(j, "start_index") - 1], \
-                "weight[end]: ", weight_array_accum[grid_cell_array.get_cell_attr(j, "end_index")]
+                print("start index: " + str(grid_cell_array.get_cell_attr(j, "start_index")) + " end index: " + \
+                str(grid_cell_array.get_cell_attr(j, "end_index")) + " mass_occ: " +  str(m_occ_up) + " mass_free: " + \
+                str(m_free_up) + " weight[start]: " + str(weight_array_accum[grid_cell_array.get_cell_attr(j, "start_index") - 1]) + \
+                " weight[end]: " + str(weight_array_accum[grid_cell_array.get_cell_attr(j, "end_index")]))
                 assert(m_occ_up <= 1. and m_occ_up >= 0.)
                 assert (m_free_up <= 1. and m_free_up >= 0.)
                 assert(m_occ_up + m_free_up <= 1.)

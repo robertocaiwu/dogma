@@ -68,7 +68,7 @@ def Resample(particle_array, birth_particle_array, particle_array_next, check_va
 	# debugging information
     if check_values:
         weight_array_accum = particle_array_next.accumulate_weight()
-        print "Final weight sum: ", weight_array_accum[-1]
+        print("Final weight sum: " + str(weight_array_accum[-1]))
 
         particle_array_next.sort_particles()
 
@@ -87,12 +87,12 @@ def Resample(particle_array, birth_particle_array, particle_array_next, check_va
                     i = i + 1
 
                 else:
-                    print "index: ", index, "particle: ", i
-                    print "Sum of weights in cell: ", sum_weight
+                    print("index: " + str(index) + " particle: " + str(i))
+                    print("Sum of weights in cell: " + str(sum_weight))
                     assert(sum_weight <= 1.)
                     assert(sum_weight >= 0.)
 
-        print "Sum of weight in last set of particles: ", sum_weight
+        print("Sum of weight in last set of particles: " + str(sum_weight))
 
 def calc_resampled_indeces(joint_weight_array_accum, rand_array, joint_particle_num):
     accum_max = joint_weight_array_accum[-1]

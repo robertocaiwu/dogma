@@ -70,12 +70,12 @@ def NewParticleInitialization(Vb, grid_cell_array, meas_cell_array, birth_partic
                     i = i+1
 
                 else:
-                    print "Sum of weights vs rho_b: ", sum_weight, rho_b
+                    print("Sum of weights vs rho_b: " +  str(sum_weight) + ", " + str(rho_b))
                     assert ((sum_weight - grid_cell_array.get_cell_attr(index, "rho_b"))**2 < 10.**-10)
 
         rho_b = grid_cell_array.get_cell_attr(index, "rho_b")
-        print "rho_b: ", rho_b
-        print "Sum of particles in the grid cell: ", sum_weight
+        print("rho_b: " + str(rho_b))
+        print("Sum of particles in the grid cell: " +  str(sum_weight))
 
     return 
 

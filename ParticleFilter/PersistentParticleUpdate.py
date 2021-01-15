@@ -61,15 +61,15 @@ def PersistentParticleUpdate(particle_array, grid_cell_array, meas_cell_array, c
         # check weight array should equal rho_p in each grid cell?
         index = 100
         rho_p = grid_cell_array.get_cell_attr(index, "rho_p")
-        print "rho_p: ", rho_p
+        print("rho_p: " + str(rho_p))
         start_index = grid_cell_array.get_cell_attr(index, "start_index")
         end_index = grid_cell_array.get_cell_attr(index, "end_index")
         weight_array_accum = particle_array.accumulate_weight()
         if (start_index != None and end_index != 1):
-            print "Sum of particles in the grid cell: ", weight_array_accum[end_index] - weight_array_accum[start_index-1]
+            print("Sum of particles in the grid cell: " + str(weight_array_accum[end_index] - weight_array_accum[start_index-1]))
 
-        print "This is the total weight of particles after norm: ", weight_array_accum[-1]
-        print "This is the total weight of particles before norm: ", weight_array_original_accum[-1]
+        print("This is the total weight of particles after norm: " + str(weight_array_accum[-1]))
+        print("This is the total weight of particles before norm: " + str(weight_array_original_accum[-1]))
 
     return
 
