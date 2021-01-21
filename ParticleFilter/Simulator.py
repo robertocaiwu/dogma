@@ -15,7 +15,7 @@ if not os.path.exists(OUTPUT_DIR):
 
 def create_data(w=256, res=1):
     """Make an array for the demonstration."""
-    n_elems = len(xrange(0, w, res))
+    n_elems = len(range(0, w, res))
     # unknown: 0, occupied: 1, free: 2
     Z = 2.0*np.ones((n_elems, n_elems))
     return Z
@@ -45,8 +45,8 @@ class Grid(object):
         l_ind, r_ind, b_ind, t_ind = [self.pos_to_ind(val) for val in edges]
         # Fill all encompassed indices
         vehicle_inds = []
-        for i in xrange(l_ind, r_ind+1):
-            for j in xrange(b_ind, t_ind+1):
+        for i in range(l_ind, r_ind+1):
+            for j in range(b_ind, t_ind+1):
                 vehicle_inds.append((i,j))
         return vehicle_inds
 
@@ -86,7 +86,7 @@ class Grid(object):
         return
 
     def tick(self, steps=1, do_plot=False):
-        for _ in xrange(steps):
+        for _ in range(steps):
             # Move all vehicles
             # .move() increments the *precise* internal position
             # .place_vehicles() assigns the vehicle to *coarser* grid indices
@@ -162,7 +162,7 @@ def main():
     counter = 0
     grids = []
     grid = Grid(vehicles, grid_side_len, grid_spacing, counter)
-    for _ in xrange(10):
+    for _ in range(10):
         grid.tick(steps=1, do_plot=True)
         
         # save the data

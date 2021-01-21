@@ -50,13 +50,13 @@ def PersistentParticleUpdate(particle_array, grid_cell_array, meas_cell_array, c
             mu_UA = calc_norm_unassoc(rho_p, m_occ_accum_orig)
             grid_cell_array.set_cell_nc(j, mu_A, mu_UA)
 
-            #print("mu_A: %f, mu_UA: %f" % (mu_A, mu_UA))
+            print("mu_A: %f, mu_UA: %f" % (mu_A, mu_UA))
 
-            #print("occ_acum: %f, rho_p: %f, mu_A: %f, mu_UA: %f\n" % (m_occ_accum, rho_p, mu_A, mu_UA))
+            print("occ_acum: %f, rho_p: %f, mu_A: %f, mu_UA: %f\n" % (m_occ_accum, rho_p, mu_A, mu_UA))
 
         else:
             # cells without particles predicted into
-            #print("Persistent update None")
+            print("Persistent update None")
             next
 
     particle_array.normalize_weight(weight_array, grid_cell_array, meas_cell_array)
@@ -66,15 +66,15 @@ def PersistentParticleUpdate(particle_array, grid_cell_array, meas_cell_array, c
         # check weight array should equal rho_p in each grid cell?
         index = 100
         rho_p = grid_cell_array.get_cell_attr(index, "rho_p")
-        print "rho_p: ", rho_p
+        print("rho_p: %f" % (rho_p))
         start_index = grid_cell_array.get_cell_attr(index, "start_index")
         end_index = grid_cell_array.get_cell_attr(index, "end_index")
         weight_array_accum = particle_array.accumulate_weight()
         if (start_index != None and end_index != 1):
-            print "Sum of particles in the grid cell: ", weight_array_accum[end_index] - weight_array_accum[start_index-1]
+            print("Sum of particles in the grid cell: %3f " % (weight_array_accum[end_index] - weight_array_accum[start_index-1]))
 
-        print "This is the total weight of particles after norm: ", weight_array_accum[-1]
-        print "This is the total weight of particles before norm: ", weight_array_original_accum[-1]
+        print("This is the total weight of particles after norm: %3f " % weight_array_accum[-1])
+        print("This is the total weight of particles before norm: %3f " % weight_array_original_accum[-1])
 
     return
 

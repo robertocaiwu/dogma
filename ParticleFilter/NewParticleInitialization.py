@@ -75,12 +75,12 @@ def NewParticleInitialization(Vb, grid_cell_array, meas_cell_array, birth_partic
                     i = i+1
 
                 else:
-                    print "Sum of weights vs rho_b: ", sum_weight, rho_b
+                    # print("Sum of weights vs rho_b: ", sum_weight, rho_b
                     assert ((sum_weight - grid_cell_array.get_cell_attr(index, "rho_b"))**2 < 10.**-10)
 
         rho_b = grid_cell_array.get_cell_attr(index, "rho_b")
-        print "rho_b: ", rho_b
-        print "Sum of particles in the grid cell: ", sum_weight
+        # print("rho_b: ", rho_b
+        # print("Sum of particles in the grid cell: ", sum_weight
 
     return 
 
@@ -94,7 +94,7 @@ def normalize_particle_orders(particle_orders_array_accum, Vb):
     if array_max <= 0: raise Exception("Accumulative array is empty or negative.")
     particle_orders_array_accum *=  Vb / (1.0 * array_max)
 
-    print "normalize_particle_orders: new max: ", particle_orders_array_accum[-1]
+    # print("normalize_particle_orders: new max: ", particle_orders_array_accum[-1]
 
     return
 
